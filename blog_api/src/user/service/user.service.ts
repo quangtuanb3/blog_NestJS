@@ -10,6 +10,7 @@ import { error } from 'console';
 
 @Injectable()
 export class UserService {
+
     constructor(
         @InjectRepository(UserEntity) private readonly userRepository: Repository<UserEntity>,
         private authService: AuthService,
@@ -23,6 +24,7 @@ export class UserService {
                 newUser.username = user.username;
                 newUser.email = user.email;
                 newUser.password = passwordHash;
+                newUser.role = user.role;
                 return from(this.userRepository.save(newUser)).pipe(
                     map((user: User) => {
                         const { password, ...result } = user;
@@ -35,8 +37,9 @@ export class UserService {
     }
 
     findOne(id: number): Observable<User> {
-        return from(this.userRepository.findOne({ where: { id } })).pipe(
+        return from(this.userRepository.findOneBy({ id })).pipe(
             map((user: User) => {
+                console.log(user)
                 const { password, ...result } = user;
                 return result;
             }), catchError(err => throwError(err))
@@ -59,16 +62,21 @@ export class UserService {
     updateOne(id: number, user: User): Observable<any> {
         delete user.email;
         delete user.password;
+        delete user.role;
         return from(this.userRepository.update(id, user));
+    }
+
+    updateRoleOfUser(id: number, user: User): Observable<any> {
+        const newUser = new UserEntity();
+        newUser.role = user.role;
+        return from(this.userRepository.update(id, newUser));
     }
 
     login(user: User): Observable<string> {
         return this.validateUser(user.email, user.password).pipe(
-            switchMap( (user: User)=> {
-                if(user){
-                    return this.authService.generateJWT(user).pipe(
-                        map((jwt : string) => jwt)
-                    )
+            switchMap((user: User) => {
+                if (user) {
+                    return this.authService.generateJWT(user).pipe(map((jwt: string) => jwt))
                 } else {
                     return 'Wrong Credential'
                 }
@@ -82,7 +90,7 @@ export class UserService {
                 map((match: boolean) => {
                     if (match) {
                         const { password, ...result } = user;
-                        return user;
+                        return result;
                     } else {
                         throw Error;
                     }
@@ -93,7 +101,7 @@ export class UserService {
     }
 
     findByEmail(email: string): Observable<User> {
-        return from(this.userRepository.findOne({ where:  {email} }));
+        return from(this.userRepository.findOneBy({ email }));
     }
 
 }

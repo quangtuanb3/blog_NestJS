@@ -3,9 +3,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from '../models/user.entity';
 import { Repository } from 'typeorm';
 import { Observable, catchError, from, switchMap, throwError, map } from 'rxjs';
-import { User } from '../models/user.interface';
+import { User, UserRole } from '../models/user.interface';
 import { AuthService } from 'src/auth/service/auth.service';
-import { error } from 'console';
+import {
+    paginate,
+    Pagination,
+    IPaginationOptions,
+} from 'nestjs-typeorm-paginate';
 
 
 @Injectable()
@@ -24,7 +28,7 @@ export class UserService {
                 newUser.username = user.username;
                 newUser.email = user.email;
                 newUser.password = passwordHash;
-                newUser.role = user.role;
+                newUser.role = UserRole.USER;
                 return from(this.userRepository.save(newUser)).pipe(
                     map((user: User) => {
                         const { password, ...result } = user;
@@ -39,7 +43,6 @@ export class UserService {
     findOne(id: number): Observable<User> {
         return from(this.userRepository.findOneBy({ id })).pipe(
             map((user: User) => {
-                console.log(user)
                 const { password, ...result } = user;
                 return result;
             }), catchError(err => throwError(err))
@@ -53,6 +56,16 @@ export class UserService {
                 return users;
             })
         );
+    }
+
+    paginate(options: IPaginationOptions): Observable<Pagination<User>> {
+        return from(paginate<User>(this.userRepository, options)).pipe(
+            map((usersPageable: Pagination<User>) => {
+                console.log("usersPageable ", usersPageable);
+                usersPageable.items.forEach(function (v) { delete v.password })
+                return usersPageable;
+            })
+        )
     }
 
     deleteOne(id: number): Observable<any> {

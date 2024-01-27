@@ -2,7 +2,6 @@ import { Body, Controller, Post, Get, Param, Delete, Put, UseGuards, DefaultValu
 import { UserService } from '../service/user.service';
 import { User, UserRole } from '../models/user.interface';
 import { Observable, catchError, map, of } from 'rxjs';
-import { error } from 'console';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { hasRoles } from 'src/auth/decorator/roles.decorator';

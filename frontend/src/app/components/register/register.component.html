@@ -23,11 +23,16 @@
         </mat-form-field>
 
         <mat-form-field>
-            <input matInput placeholder="Password Confirm" type="password" formControlName="passwordConfirm">
-            <mat-hint *ngIf="registerForm.controls['passwordConfirm'].errors">Password Confirm is required</mat-hint>
+            <input matInput placeholder="Password Confirm" type="password" formControlName="confirmPassword">
+            <mat-hint *ngIf="registerForm.controls['confirmPassword'].errors">Passwords not matching</mat-hint>
         </mat-form-field>
 
         <button mat-flat-button color="primary" [disabled]="!registerForm.valid" type="submit">Register</button>
     </div>
 
 </form>
+
+<h3 *ngIf="registerForm.invalid">Form contains following errors</h3>
+<small *ngIf="registerForm?.get('password')?.hasError('passwordInvalid')">Password is not contain number</small>
+<br>
+<small *ngIf="registerForm?.hasError('passwordsNotMatching')">Passwords not matching</small>

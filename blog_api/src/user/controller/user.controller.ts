@@ -41,9 +41,15 @@ export class UserController {
     index(
         @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
         @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
+        @Query('username', new DefaultValuePipe(undefined)) username: string
     ): Observable<Pagination<User>> {
         limit = limit > 100 ? 100 : limit;
-        return this.userService.paginate({ page, limit, route: 'http://localhost:3000/api/users', });
+        if (username === null || username === undefined) {
+            return this.userService.paginate({ page, limit, route: 'http://localhost:3000/api/users', });
+        } else {
+            return this.userService.paginateWithFilter({ page, limit, route: 'http://localhost:3000/api/users' }, { username })
+        }
+
     }
 
     // @hasRoles(UserRole.ADMIN)

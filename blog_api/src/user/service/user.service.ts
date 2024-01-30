@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from '../models/user.entity';
-import { Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
 import { Observable, catchError, from, switchMap, throwError, map } from 'rxjs';
 import { User, UserRole } from '../models/user.interface';
 import { AuthService } from 'src/auth/service/auth.service';
@@ -10,6 +10,7 @@ import {
     Pagination,
     IPaginationOptions,
 } from 'nestjs-typeorm-paginate';
+import { totalmem } from 'os';
 
 
 @Injectable()
@@ -49,23 +50,55 @@ export class UserService {
         );
     }
 
-    findAll(): Observable<User[]> {
-        return from(this.userRepository.find()).pipe(
-            map((users: User[]) => {
-                users.forEach(function (v) { delete v.password });
-                return users;
-            })
-        );
-    }
+    // findAll(): Observable<User[]> {
+    //     return from(this.userRepository.find()).pipe(
+    //         map((users: User[]) => {
+    //             users.forEach(function (v) { delete v.password });
+    //             return users;
+    //         })
+    //     );
+    // }
 
-    paginate(options: IPaginationOptions): Observable<Pagination<User>> {
+    paginate(options: IPaginationOptions,): Observable<Pagination<User>> {
         return from(paginate<User>(this.userRepository, options)).pipe(
             map((usersPageable: Pagination<User>) => {
-                console.log("usersPageable ", usersPageable);
                 usersPageable.items.forEach(function (v) { delete v.password })
                 return usersPageable;
             })
         )
+    }
+
+    paginateWithFilter(options: IPaginationOptions, user: User): Observable<Pagination<User>> {
+        return from(this.userRepository.findAndCount({
+            skip: (Number(options.page) - 1) * Number(options.limit) || 0,
+            take: Number(options.limit) || 1,
+            order: { id: 'ASC' },
+            select: ['id', 'email', 'name', 'username', 'role'],
+            where: [
+                { username: Like(`%${user.username}%`) }
+            ]
+        })).pipe(
+            map(([users, totalUsers]) => {
+                const usersPageable: Pagination<User> = {
+                    items: users,
+                    links: {
+                        first: options.route + `?limit=${options.limit}`,
+                        previous: options.route + `?limit=${options.limit}&page=${Number(options.page) - 1}`,
+                        next: options.route + `?limit=${options.limit}&page=${Number(options.page) + 1}`,
+                        last: options.route + `?limit=${options.limit}&page=${Math.ceil(totalUsers / Number(options.limit))}`,
+                    },
+                    meta: {
+                        itemCount: users.length,
+                        itemsPerPage: Number(options.limit),
+                        currentPage: Number(options.page),
+                        totalPages: Math.ceil(totalUsers / Number(options.limit)),
+                        totalItems: totalUsers
+                    }
+                }
+                return usersPageable;
+            })
+        )
+
     }
 
     deleteOne(id: number): Observable<any> {

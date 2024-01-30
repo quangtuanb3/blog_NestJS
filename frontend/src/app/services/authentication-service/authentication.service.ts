@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { LoginComponent } from '../components/login/login.component';
+import { LoginComponent } from '../../components/login/login.component';
 import { FormGroup } from '@angular/forms';
 import { map } from 'rxjs';
 
@@ -14,7 +14,8 @@ export interface User {
   username: string;
   email: string;
   password: string;
-  passwordConfirm: string
+  // passwordConfirm: string;
+  role: string;
 }
 
 @Injectable({
@@ -22,9 +23,9 @@ export interface User {
 })
 export class AuthenticationService {
   register(user: User) {
-   return this.http.post<any>('/api/users', user).pipe(
-    map(user => user)
-   )
+    return this.http.post<any>('/api/users', user).pipe(
+      map(user => user)
+    )
   }
 
   constructor(

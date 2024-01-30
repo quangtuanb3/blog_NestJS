@@ -35,7 +35,7 @@ export class UserController {
         return this.userService.findOne(params.id)
     }
 
-   
+
 
     @Get()
     index(
@@ -43,7 +43,7 @@ export class UserController {
         @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
     ): Observable<Pagination<User>> {
         limit = limit > 100 ? 100 : limit;
-        return this.userService.paginate({ page, limit, route: 'http://localhost:3000/users', });
+        return this.userService.paginate({ page, limit, route: 'http://localhost:3000/api/users', });
     }
 
     // @hasRoles(UserRole.ADMIN)

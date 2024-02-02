@@ -34,12 +34,25 @@ export class UserService {
   findAll({ page = 1, limit = 10 }: { page?: number, limit?: number }): Observable<UserData> {
     let params = new HttpParams();
     params = params.append('page', String(page)).append('limit', String(limit))
-    console.log("params ", params);
 
     return this.http.get<UserData>('/api/users', { params }).pipe(
       map((userData: UserData) => userData),
       catchError(err => throwError(err))
     )
+  }
 
+  paginateByName({ page = 1, limit = 10, username = '' }: { page?: number, limit?: number, username: string }): Observable<UserData> {
+    let params = new HttpParams();
+    // params = params.append('page', String(page)).append('limit', String(limit)).append('username', String(username))
+    params = params.appendAll({
+      'page': String(page),
+      'limit': String(limit),
+      'username': String(username)
+    })
+    console.log({ params });
+    return this.http.get<UserData>('/api/users', { params }).pipe(
+      map((userData: UserData) => userData),
+      catchError(err => throwError(err))
+    )
   }
 }

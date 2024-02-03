@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { PageEvent } from '@angular/material/paginator';
-import { map, tap } from 'rxjs';
+import { Subject, debounceTime, distinctUntilChanged, map, tap } from 'rxjs';
 import { User } from 'src/app/services/authentication-service/authentication.service';
 import { UserData, UserService } from 'src/app/services/user-service/user.service';
 
@@ -12,22 +12,54 @@ import { UserData, UserService } from 'src/app/services/user-service/user.servic
 export class UsersComponent implements OnInit {
   dataSource!: UserData;
   displayedColumns: string[] = ['id', 'name', 'username', 'email', 'role'];
-
   pageSizeOptions = [2, 4, 10];
   hidePageSize = false;
   showPageSizeOptions = true;
   showFirstLastButtons = true;
   pageSize = 4;
+  pageIndex = 1;
   disabled = false;
-
   pageEvent!: PageEvent;
 
-  filterValue!: string;
+  // filterValue!: string;
+
+  // Model for form input value - this will always have latest value
+  public inputValue!: string;
+  // This value will be updated only after debounce
+  public debouncedInputValue = this.inputValue;
+  // Holds results
+  // public people$: Subject<any> = new Subject();
+  private searchDebouncer$: Subject<string> = new Subject();
 
   constructor(private userService: UserService) { }
 
   ngOnInit(): void {
     this.initDataSource()
+    // Setup debouncer
+    this.setupSearchDebouncer();
+  }
+
+  public onSearchInputChange(term: string): void {
+    // `onSearchInputChange` is called whenever the input is changed.
+    // We have to send the value to debouncing observable
+    this.searchDebouncer$.next(term);
+  }
+
+  private setupSearchDebouncer(): void {
+    // Subscribe to `searchDebouncer$` values,
+    // but pipe through `debounceTime` and `distinctUntilChanged`
+    this.searchDebouncer$.pipe(
+      debounceTime(500),
+      distinctUntilChanged(),
+    ).subscribe((term: string) => {
+      // Remember value after debouncing
+      this.debouncedInputValue = term;
+
+      // Do the actual search
+      this.userService.paginateByName({ username: this.debouncedInputValue, page: this.pageIndex, limit: this.pageSize }).pipe(
+        map((userData: UserData) => this.dataSource = userData)
+      ).subscribe();
+    });
   }
 
   initDataSource() {
@@ -41,15 +73,15 @@ export class UsersComponent implements OnInit {
   handlePageEvent(e: PageEvent) {
     this.pageEvent = e;
     this.pageSize = e.pageSize;
-    let pageIndex = e.pageIndex;
-    pageIndex = pageIndex + 1;
+    this.pageIndex = e.pageIndex;
+    this.pageIndex = this.pageIndex + 1;
 
-    if (this.filterValue == null) {
-      this.userService.findAll({ page: pageIndex, limit: this.pageSize }).pipe(
+    if (this.debouncedInputValue == null) {
+      this.userService.findAll({ page: this.pageIndex, limit: this.pageSize }).pipe(
         map((userData: UserData) => this.dataSource = userData)
       ).subscribe();
     } else {
-      this.userService.paginateByName({ username: this.filterValue, page: pageIndex, limit: this.pageSize }).pipe(
+      this.userService.paginateByName({ username: this.debouncedInputValue, page: this.pageIndex, limit: this.pageSize }).pipe(
         map((userData: UserData) => this.dataSource = userData)
       ).subscribe();
     }

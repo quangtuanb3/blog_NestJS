@@ -5,11 +5,14 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "cypress:open": "cypress open"
+    "cypress:open": "cypress open",
+    "cypress:report": "node config.js"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "cypress": "^13.6.4"
+    "cypress": "^13.6.4",
+    "cypress-multi-reporters": "^1.6.4",
+    "mocha-junit-reporter": "^2.2.1"
   }
 }
